@@ -1,5 +1,5 @@
-# Template .gitlab-ci.yml
+# GitLab CI job templates for DevSecOps
 
-This repository has some template job for .gitlab-ci.yml
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Author by imnazipov
+A collection of GitLab CI job templates. 
