@@ -1,0 +1,35 @@
+#Created by @imnazipov daniil.nazipov2001@gmail.com
+
+variables:
+  SBOM_TARGET: ""
+
+syft-job:
+  stages: sbom
+  image: anchore/syft:v1.51.0-nonroot
+  tags:
+    - linux
+  variables:
+    SBOM_FILE: "sbom.cdx.json"
+    SBOM_TARGET: "file.lock"
+  before_script:
+  - echo "Generate SBOM file in process"
+  script:
+  - syft scan $SBOM_TARGET  --output cyclonedx-json=$SBOM_FILE
+  after_script:
+  - echo "Generate SBOM file is finish"
+  artifacts:
+    name: syft-job-${CI_PROJECT_NAME}-${CI_COMMIT_SHORT_SHA}
+    paths:
+      - $SBOM_FILE
+    expire_in: 1 houre
+    when: always
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/) 
+    - if: $CI_PIPELINE_SOURCE == "web" && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/)
+    - if: >-
+          $CI_PIPELINE_SOURCE == "push" 
+          && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" 
+          && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/) 
+          && $CI_OPEN_MERGE_REQUESTS == null
+    - when: never
+  allow_failure: true
