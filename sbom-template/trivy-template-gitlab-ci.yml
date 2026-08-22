@@ -1,0 +1,42 @@
+#Created by @imnazipov daniil.nazipov2001@gmail.com
+
+variables:
+  TRIVY_TARGET:
+    value: "filesystem"
+    options:
+     - "filesystem"
+     - "container" 
+     - "git-repository"
+     - "vm" 
+     - "k8s"
+
+trivy-job:
+  stages: sbom
+  image: aquasec/trivy:0.74.0
+  tags:
+    - linux
+  variables:
+    SBOM_FILE: "sbom.cdx.json"
+    TARGET: "file.lock"
+  before_script:
+  - echo "Generate SBOM file in process"
+  script:
+  - trivy fs --format cyclonedx --output $SBOM_FILE $TARGET
+  after_script:
+  - echo "Generate SBOM file is finish"
+  artifacts:
+    name: trivy-job-${CI_PROJECT_NAME}-${CI_COMMIT_SHORT_SHA}
+    paths:
+      - $SBOM_FILE
+    expire_in: 1 houre
+    when: always
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/) 
+    - if: $CI_PIPELINE_SOURCE == "web" && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/)
+    - if: >-
+          $CI_PIPELINE_SOURCE == "push" 
+          && $CI_COMMIT_BEFORE_SHA != "0000000000000000000000000000000000000000" 
+          && ($CI_COMMIT_BRANCH =~ /development/ || $CI_COMMIT_BRANCH =~ /master/ || $CI_COMMIT_BRANCH =~ /main/ || $CI_COMMIT_BRANCH =~ /release/) 
+          && $CI_OPEN_MERGE_REQUESTS == null
+    - when: never
+  allow_failure: true
